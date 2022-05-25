@@ -7,7 +7,9 @@ import com.example.demo.model.Utilisateur;
 import com.example.demo.security.JwtUtils;
 import com.example.demo.security.UserDetailsDemo;
 import com.example.demo.security.UserDetailsServiceDemo;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -81,7 +83,11 @@ public class UtilisateurController {
                     )
             );
         } catch (BadCredentialsException e) {
-            throw new Exception(e);
+
+            Map<String,String> retour = new HashMap<>();
+            retour.put("erreur", "Mauvais login / mot de passe");
+            return retour;
+
         }
 
         UserDetailsDemo userDetails = userDetailsServiceDemo
@@ -135,11 +141,30 @@ public class UtilisateurController {
     }
 
     @PostMapping("/utilisateur")
-    public String createUtilisateur(@RequestBody Utilisateur utilisateur) {
+    public ResponseEntity<Utilisateur> createUtilisateur(
+            @RequestBody Utilisateur utilisateur,
+            @RequestHeader("Authorization") String jwt
+    ) {
+        String token = jwt.substring(7);
 
-        this.utilisateurDao.save(utilisateur);
+        int idUtilisateurConnecte = (int)jwtUtils.getTokenBody(token).get("id");
+        String droits = (String)jwtUtils.getTokenBody(token).get("droit");
 
-        return "ok";
+        if(droits.contains("ROLE_ADMIN") || idUtilisateurConnecte == utilisateur.getId()) {
+            Optional<Utilisateur> ancienUtilisateur = utilisateurDao.findById(utilisateur.getId());
+
+            if (ancienUtilisateur.isPresent()) {
+                ancienUtilisateur.get().setNom(utilisateur.getNom());
+                ancienUtilisateur.get().setPrenom(utilisateur.getPrenom());
+                this.utilisateurDao.save(ancienUtilisateur.get());
+
+                return ResponseEntity.ok(ancienUtilisateur.get());
+            }
+
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 
     @DeleteMapping("/utilisateur/{id}")
@@ -153,6 +178,28 @@ public class UtilisateurController {
         } else {
             return ResponseEntity.noContent().build();
         }
+    }
+
+    @GetMapping("/deconnexion")
+    public ResponseEntity<String> deconnexion(@RequestHeader("Authorization") String jwt){
+
+        String token = jwt.substring(7);
+        int idUtilisateurConnecte = (int)jwtUtils.getTokenBody(token).get("id");
+
+        Optional<Utilisateur> utilisateurOptional =
+                utilisateurDao.findById(idUtilisateurConnecte);
+
+        if(utilisateurOptional.isPresent()) {
+            utilisateurOptional.get().setNumeroToken(
+                    utilisateurOptional.get().getNumeroToken() + 1);
+
+            utilisateurDao.save(utilisateurOptional.get());
+
+            return ResponseEntity.ok().build();
+        }
+
+        return ResponseEntity.noContent().build();
+
     }
 
 }

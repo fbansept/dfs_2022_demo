@@ -36,6 +36,9 @@ public class Utilisateur
 
     private String email;
 
+    //numero permettant d'invalider le token de l'utilisateur
+    private int numeroToken;
+
 //    @JsonView(VueReservation.class)
 //    private boolean admin;
 

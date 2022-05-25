@@ -1,5 +1,7 @@
 package com.example.demo.security;
 
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -12,6 +14,7 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.FileInputStream;
 import java.io.IOException;
 
 @Component
@@ -31,18 +34,31 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if(token != null && token.startsWith("Bearer ")){
             String jwt = token.substring(7);
 
-            String email = jwtUtils.getTokenBody(jwt).getSubject();
+            try {
 
-            UserDetails userDetails = this.userDetailsServiceDemo.loadUserByUsername(email);
+                String email = jwtUtils.getTokenBody(jwt).getSubject();
 
-            if(jwtUtils.tokenValide(jwt,userDetails)){
+                UserDetailsDemo userDetails = this.userDetailsServiceDemo.loadUserByUsername(email);
 
-                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                usernamePasswordAuthenticationToken
-                        .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                if(jwtUtils.tokenValide(jwt,userDetails)){
 
+                    UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    usernamePasswordAuthenticationToken
+                            .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+
+                }
+
+            } catch(MalformedJwtException e){
+                System.out.println("Le token est malformé !");
+                e.printStackTrace();
+            } catch(SignatureException e){
+                System.out.println("Le token à un corp qui ne correspond pas à la signature !");
+                e.printStackTrace();
+            } catch(Exception e){
+                System.out.println("Erreur inconnue sur le traitement du token");
+                e.printStackTrace();
             }
         }
 

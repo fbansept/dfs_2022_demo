@@ -15,6 +15,7 @@
 	<description>Demo project for Spring Boot</description>
 	<properties>
 		<java.version>11</java.version>
+		<skipTest>false</skipTest>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -42,7 +43,7 @@
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
-			<version>1.18.8</version>
+			<version>1.18.20</version>
 		</dependency>
 
 		<dependency>
@@ -85,8 +86,20 @@
 
 		</profile>
 
+		<profile>
+			<id>prod</id>
+			<properties>
+				<skipTest>true</skipTest>
+				<secret-jwt>azerty123</secret-jwt>
+				<adresse-bdd>localhost</adresse-bdd>
+				<nom-bdd>spring_cda_2022</nom-bdd>
+				<nom-utilisateur-bdd>root</nom-utilisateur-bdd>
+				<mot-de-passe-utilisateur-bdd>#123HaHa</mot-de-passe-utilisateur-bdd>
+			</properties>
+		</profile>
 	</profiles>
 
+	<packaging>war</packaging>
 
 	<build>
 		<resources>
@@ -99,6 +112,28 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.0.0-M6</version>
+				<configuration>
+					<skipTest>${skipTest}</skipTest>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.7</version>
+				<dependencies>
+					<dependency>
+						<groupId>org.apache.maven.shared</groupId>
+						<artifactId>maven-filtering</artifactId>
+						<version>1.3</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 		</plugins>
 	</build>

@@ -48,7 +48,7 @@ public class SecuriteDemo extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
-        http.csrf().disable()
+        http.cors().and().csrf().disable()
                     .authorizeRequests()
                     .antMatchers("/connexion","/inscription").permitAll()
                     //.antMatchers("/supprimer-utilisateur/**").hasRole("SUPPRIME_UTILISATEUR")
@@ -66,7 +66,11 @@ public class SecuriteDemo extends WebSecurityConfigurerAdapter {
 
         maConfiguration.setAllowedOrigins(List.of("*"));
         maConfiguration.setAllowedMethods(List.of("HEAD","GET", "POST", "PUT", "DELETE", "PATCH"));
-        maConfiguration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
+        maConfiguration.setAllowedHeaders(List.of(
+                "Access-Control-Allow-Origin",
+                "Authorization",
+                "Cache-Control",
+                "Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", maConfiguration);
