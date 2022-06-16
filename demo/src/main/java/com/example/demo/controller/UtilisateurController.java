@@ -101,30 +101,10 @@ public class UtilisateurController {
     }
 
     @GetMapping("/liste-utilisateur")
-    public List<Utilisateur> listeUtilisateur () {
+    public ResponseEntity<List<Utilisateur>> listeUtilisateur () {
 
-        List<Map<String, Object>> requete = utilisateurDao.selectUtilisateur();
+        return ResponseEntity.ok(utilisateurDao.findAll());
 
-        List<Utilisateur> listeUtilisateur = new ArrayList<>();
-
-        for( Map<String, Object> ligneResultat : requete){
-
-            Utilisateur utilisateur = new Utilisateur();
-
-            int id = (int)ligneResultat.get("id");
-            String nom = (String)ligneResultat.get("nom");
-            String prenom = (String)ligneResultat.get("prenom");
-            String moDePasse = (String)ligneResultat.get("mot_de_passe");
-
-            utilisateur.setId(id);
-            utilisateur.setNom(nom);
-            utilisateur.setPrenom(prenom);
-            utilisateur.setMotDePasse(moDePasse);
-
-            listeUtilisateur.add(utilisateur);
-        }
-
-        return utilisateurDao.findAll();
     }
 
     @GetMapping("/utilisateur-par-nom/{nom}")
@@ -134,36 +114,43 @@ public class UtilisateurController {
     }
 
     @GetMapping("/utilisateur/{id}")
-    public Utilisateur utilisateur(@PathVariable Integer id) {
+    public ResponseEntity<Utilisateur> utilisateur(@PathVariable Integer id) {
 
-        return this.utilisateurDao.findById(id).orElse(null);
+        Optional<Utilisateur> utilisateur = this.utilisateurDao.findById(id);
 
+        if(utilisateur.isPresent()) {
+            return ResponseEntity.ok(utilisateur.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/utilisateur")
-    public ResponseEntity<Utilisateur> createUtilisateur(
-            @RequestBody Utilisateur utilisateur,
-            @RequestHeader("Authorization") String jwt
-    ) {
-        String token = jwt.substring(7);
+    public ResponseEntity<String> createUtilisateur(
+            @RequestBody Utilisateur utilisateur) {
 
-        int idUtilisateurConnecte = (int)jwtUtils.getTokenBody(token).get("id");
-        String droits = (String)jwtUtils.getTokenBody(token).get("droit");
+        if(utilisateur.getId() != null) {
 
-        if(droits.contains("ROLE_ADMIN") || idUtilisateurConnecte == utilisateur.getId()) {
-            Optional<Utilisateur> ancienUtilisateur = utilisateurDao.findById(utilisateur.getId());
+            Optional<Utilisateur> utilisateurBaseDeDonnee =
+                    utilisateurDao.findById(utilisateur.getId());
 
-            if (ancienUtilisateur.isPresent()) {
-                ancienUtilisateur.get().setNom(utilisateur.getNom());
-                ancienUtilisateur.get().setPrenom(utilisateur.getPrenom());
-                this.utilisateurDao.save(ancienUtilisateur.get());
+            if(utilisateurBaseDeDonnee.isPresent()) {
 
-                return ResponseEntity.ok(ancienUtilisateur.get());
+                utilisateurBaseDeDonnee.get().setNom(utilisateur.getNom());
+                utilisateurBaseDeDonnee.get().setPrenom(utilisateur.getPrenom());
+                utilisateurBaseDeDonnee.get().setEmail(utilisateur.getEmail());
+
+                this.utilisateurDao.save(utilisateurBaseDeDonnee.get());
+                return ResponseEntity.ok("Utilisateur modifié");
+
+            } else {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_MODIFIED)
+                        .build();
             }
-
-            return ResponseEntity.noContent().build();
         } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            this.utilisateurDao.save(utilisateur);
+            return ResponseEntity.status(HttpStatus.CREATED).build();
         }
     }
 
@@ -176,7 +163,7 @@ public class UtilisateurController {
             utilisateurDao.deleteById(id);
             return ResponseEntity.ok().build();
         } else {
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.notFound().build();
         }
     }
 

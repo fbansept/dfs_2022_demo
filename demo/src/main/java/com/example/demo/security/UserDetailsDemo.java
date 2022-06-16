@@ -34,7 +34,6 @@ public class UserDetailsDemo implements UserDetails {
             listeAuthority.add(new SimpleGrantedAuthority("ROLE_ADMIN));
         }*/
 
-        //----GESTION DES DROITS PAR BOOLEEN----
         /*if(this.utilisateur.isAdmin()) {
             listeAuthority.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
         }*/

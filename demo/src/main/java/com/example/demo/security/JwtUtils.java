@@ -47,6 +47,7 @@ public class JwtUtils {
         Date dateExpiration = new Date(dateAujourdhuiEnMilliseconde + (4 * 60 * 1000));
 
         donnees.put("numeroToken", userDetailsDemo.getUtilisateur().getNumeroToken());
+     
 
         return Jwts.builder()
                 .setClaims(donnees)
